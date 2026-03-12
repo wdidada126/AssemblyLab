@@ -13,27 +13,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Download MASM6.x
-      shell: pwsh
-      run: |
-        $masmDir = "$env:TEMP\masm6x"
-        if (-not (Test-Path $masmDir)) {
-            New-Item -ItemType Directory -Force -Path $masmDir | Out-Null
-        }
-        Write-Host "MASM6.x will be used from repository"
-
-    - name: Copy MASM from repo
-      run: |
-        if (Test-Path "masm") {
-            Write-Host "Using bundled MASM"
-        }
-
-    - name: Build Lab examples
+    - name: Build Lab examples with MASM6.x
       shell: pwsh
       run: |
         $masmDir = "masm"
         if (-not (Test-Path $masmDir)) {
-            Write-Host "Error: masm folder not found. Please ensure MASM6.x files are in 'masm' folder"
+            Write-Host "Error: masm folder not found"
             exit 1
         }
 
@@ -49,13 +34,12 @@ jobs:
         foreach ($asm in $asmFiles) {
             $filename = $asm.BaseName
             $dir = $asm.DirectoryName
-            $objPath = "$dir\$filename.obj"
             
             Write-Host "Assembling: $($asm.Name)"
             
             $output = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "  -> Success"
+                Write-Host "  -> Success: $filename.obj"
                 $success++
             } else {
                 Write-Host "  -> Failed (exit code: $LASTEXITCODE)"
