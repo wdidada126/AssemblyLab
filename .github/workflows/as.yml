@@ -19,36 +19,39 @@ jobs:
         $OutputEncoding = [System.Text.Encoding]::UTF8
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-        $masmDir = "masm"
+        $projectRoot = $PWD.Path
+        $masmDir = Join-Path $projectRoot "masm"
+
         if (-not (Test-Path $masmDir)) {
-            Write-Host "Error: masm folder not found"
+            Write-Host "Error: masm folder not found at $masmDir"
             exit 1
         }
 
         $env:Path = "$masmDir;$env:Path"
 
-        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object { 
+        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object {
             $_.Name -match "^lab\d" -or $_.Name -match "^chk\d" -or $_.Name -match "^proj\d" 
         }
-        
+
         $success = 0
         $failed = 0
-        
+
         foreach ($asm in $asmFiles) {
             $filename = $asm.BaseName
             $dir = $asm.DirectoryName
-            
+            $objPath = Join-Path $dir "$filename.obj"
+            $exePath = Join-Path $dir "$filename.exe"
+
             Write-Host "Assembling: $($asm.Name)"
 
-            $mlCmd = Start-Process -FilePath "$masmDir\ML.EXE" -ArgumentList "/c","$($asm.FullName)" -NoNewWindow -Wait -PassThru
-            if ($mlCmd.ExitCode -eq 0 -or (Test-Path "$dir\$filename.obj")) {
+            $mlCmd = Start-Process -FilePath "$masmDir\ML.EXE" -ArgumentList "/c","$($asm.FullName)" -NoNewWindow -Wait -PassThru -WorkingDirectory $dir
+            if ($mlCmd.ExitCode -eq 0 -or (Test-Path $objPath)) {
                 Write-Host "  -> Assembled: $filename.obj"
 
                 Write-Host "  -> Linking: $filename.exe"
-                $objPath = "$dir\$filename.obj"
                 if (Test-Path $objPath) {
-                    $linkCmd = Start-Process -FilePath "$masmDir\LINK.EXE" -ArgumentList "$objPath" -NoNewWindow -Wait -PassThru
-                    if ($linkCmd.ExitCode -eq 0 -or (Test-Path "$dir\$filename.exe")) {
+                    $linkCmd = Start-Process -FilePath "$masmDir\LINK.EXE" -ArgumentList "$objPath" -NoNewWindow -Wait -PassThru -WorkingDirectory $dir
+                    if ($linkCmd.ExitCode -eq 0 -or (Test-Path $exePath)) {
                         Write-Host "  -> Linked: $filename.exe"
                         $success++
                     } else {
