@@ -1,0 +1,37 @@
+mount d D:\develops\git\github\as\AssemblyLab
+d:
+cd Lab4
+LAB4_1_2.EXE
+LAB4_3.EXE
+cd ..\Lab5
+LAB5_1.EXE
+LAB5_2.EXE
+LAB5_3.EXE
+LAB5_4.EXE
+LAB5_5.EXE
+cd ..\Lab6
+PROB7_9.EXE
+cd ..\Lab7
+LAB7.EXE
+cd ..\Lab8
+LAB8.EXE
+cd ..\Lab9
+LAB9.EXE
+cd ..\Lab10
+LAB10_1.EXE
+LAB10_2.EXE
+LAB10_3.EXE
+LAB10_3R.EXE
+TEST_HELLO.EXE
+cd ..\Lab11
+LAB11.EXE
+cd ..\Lab12
+LAB12.EXE
+cd ..\Lab13
+LAB13_1.EXE
+LAB13_2.EXE
+LAB13_3.EXE
+cd ..\Lab14
+LAB14.EXE
+cd ..\Lab15
+LAB15.EXE
