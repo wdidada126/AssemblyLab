@@ -39,20 +39,20 @@ jobs:
             $dir = $asm.DirectoryName
             
             Write-Host "Assembling: $($asm.Name)"
-            
-            $mlOutput = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1 | Out-String
-            if ($LASTEXITCODE -eq 0 -or (Test-Path "$dir\$filename.obj")) {
+
+            $mlCmd = Start-Process -FilePath "$masmDir\ML.EXE" -ArgumentList "/c","$($asm.FullName)" -NoNewWindow -Wait -PassThru
+            if ($mlCmd.ExitCode -eq 0 -or (Test-Path "$dir\$filename.obj")) {
                 Write-Host "  -> Assembled: $filename.obj"
-                
+
                 Write-Host "  -> Linking: $filename.exe"
                 $objPath = "$dir\$filename.obj"
                 if (Test-Path $objPath) {
-                    $linkOutput = & "$masmDir\LINK.EXE" "$objPath" < NUL 2>&1 | Out-String
-                    if ($LASTEXITCODE -eq 0 -or (Test-Path "$dir\$filename.exe")) {
+                    $linkCmd = Start-Process -FilePath "$masmDir\LINK.EXE" -ArgumentList "$objPath" -NoNewWindow -Wait -PassThru
+                    if ($linkCmd.ExitCode -eq 0 -or (Test-Path "$dir\$filename.exe")) {
                         Write-Host "  -> Linked: $filename.exe"
                         $success++
                     } else {
-                        Write-Host "  -> Link failed (exit code: $LASTEXITCODE)"
+                        Write-Host "  -> Link failed (exit code: $($linkCmd.ExitCode))"
                         $failed++
                     }
                 } else {
@@ -60,11 +60,11 @@ jobs:
                     $failed++
                 }
             } else {
-                Write-Host "  -> Assembly failed (exit code: $LASTEXITCODE)"
+                Write-Host "  -> Assembly failed (exit code: $($mlCmd.ExitCode))"
                 $failed++
             }
         }
-        
+
         Write-Host ""
         Write-Host "Build summary: $success succeeded, $failed failed"
 
