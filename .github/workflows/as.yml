@@ -24,7 +24,7 @@ jobs:
 
         $env:Path = "$masmDir;$env:Path"
 
-        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object { 
+        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object {
             $_.Name -match "^lab\d" -or $_.Name -match "^chk\d" -or $_.Name -match "^proj\d" 
         }
         
@@ -37,12 +37,21 @@ jobs:
             
             Write-Host "Assembling: $($asm.Name)"
             
-            $output = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1
+            $mlOutput = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "  -> Success: $filename.obj"
-                $success++
+                Write-Host "  -> Assembled: $filename.obj"
+                
+                Write-Host "  -> Linking: $filename.exe"
+                $linkOutput = & "$masmDir\LINK.EXE" "$dir\$filename.obj" 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "  -> Linked: $filename.exe"
+                    $success++
+                } else {
+                    Write-Host "  -> Link failed: $LASTEXITCODE"
+                    $failed++
+                }
             } else {
-                Write-Host "  -> Failed (exit code: $LASTEXITCODE)"
+                Write-Host "  -> Assembly failed (exit code: $LASTEXITCODE)"
                 $failed++
             }
         }
@@ -52,4 +61,4 @@ jobs:
 
     - name: List compiled files
       run: |
-        Get-ChildItem -Recurse -Include "*.obj" | Select-Object FullName
+        Get-ChildItem -Recurse -Include "*.exe","*.obj" | Select-Object FullName, Length
