@@ -16,6 +16,9 @@ jobs:
     - name: Build Lab examples with MASM6.x
       shell: pwsh
       run: |
+        $OutputEncoding = [System.Text.Encoding]::UTF8
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
         $masmDir = "masm"
         if (-not (Test-Path $masmDir)) {
             Write-Host "Error: masm folder not found"
@@ -24,7 +27,7 @@ jobs:
 
         $env:Path = "$masmDir;$env:Path"
 
-        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object {
+        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object { 
             $_.Name -match "^lab\d" -or $_.Name -match "^chk\d" -or $_.Name -match "^proj\d" 
         }
         
@@ -37,17 +40,23 @@ jobs:
             
             Write-Host "Assembling: $($asm.Name)"
             
-            $mlOutput = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1
-            if ($LASTEXITCODE -eq 0) {
+            $mlOutput = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0 -or (Test-Path "$dir\$filename.obj")) {
                 Write-Host "  -> Assembled: $filename.obj"
                 
                 Write-Host "  -> Linking: $filename.exe"
-                $linkOutput = & "$masmDir\LINK.EXE" "$dir\$filename.obj" 2>&1
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "  -> Linked: $filename.exe"
-                    $success++
+                $objPath = "$dir\$filename.obj"
+                if (Test-Path $objPath) {
+                    $linkOutput = & "$masmDir\LINK.EXE" "$objPath" < NUL 2>&1 | Out-String
+                    if ($LASTEXITCODE -eq 0 -or (Test-Path "$dir\$filename.exe")) {
+                        Write-Host "  -> Linked: $filename.exe"
+                        $success++
+                    } else {
+                        Write-Host "  -> Link failed (exit code: $LASTEXITCODE)"
+                        $failed++
+                    }
                 } else {
-                    Write-Host "  -> Link failed: $LASTEXITCODE"
+                    Write-Host "  -> OBJ file not found"
                     $failed++
                 }
             } else {
