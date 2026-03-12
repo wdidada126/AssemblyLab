@@ -1,0 +1,71 @@
+name: as
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download MASM6.x
+      shell: pwsh
+      run: |
+        $masmDir = "$env:TEMP\masm6x"
+        if (-not (Test-Path $masmDir)) {
+            New-Item -ItemType Directory -Force -Path $masmDir | Out-Null
+        }
+        Write-Host "MASM6.x will be used from repository"
+
+    - name: Copy MASM from repo
+      run: |
+        if (Test-Path "masm") {
+            Write-Host "Using bundled MASM"
+        }
+
+    - name: Build Lab examples
+      shell: pwsh
+      run: |
+        $masmDir = "masm"
+        if (-not (Test-Path $masmDir)) {
+            Write-Host "Error: masm folder not found. Please ensure MASM6.x files are in 'masm' folder"
+            exit 1
+        }
+
+        $env:Path = "$masmDir;$env:Path"
+
+        $asmFiles = Get-ChildItem -Recurse -Include "*.asm" | Where-Object { 
+            $_.Name -match "^lab\d" -or $_.Name -match "^chk\d" -or $_.Name -match "^proj\d" 
+        }
+        
+        $success = 0
+        $failed = 0
+        
+        foreach ($asm in $asmFiles) {
+            $filename = $asm.BaseName
+            $dir = $asm.DirectoryName
+            $objPath = "$dir\$filename.obj"
+            
+            Write-Host "Assembling: $($asm.Name)"
+            
+            $output = & "$masmDir\ML.EXE" /c "$($asm.FullName)" 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  -> Success"
+                $success++
+            } else {
+                Write-Host "  -> Failed (exit code: $LASTEXITCODE)"
+                $failed++
+            }
+        }
+        
+        Write-Host ""
+        Write-Host "Build summary: $success succeeded, $failed failed"
+
+    - name: List compiled files
+      run: |
+        Get-ChildItem -Recurse -Include "*.obj" | Select-Object FullName
