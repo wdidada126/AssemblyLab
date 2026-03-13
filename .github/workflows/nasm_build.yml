@@ -1,0 +1,54 @@
+name: Build NASM Video Demo
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'video_conference_demo_nasm/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'video_conference_demo_nasm/**'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install NASM (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y nasm
+    
+    - name: Install NASM (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install nasm
+    
+    - name: Install CMake
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          sudo apt-get install -y cmake
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          brew install cmake
+        fi
+    
+    - name: Build with CMake
+      working-directory: video_conference_demo_nasm
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+        make
+    
+    - name: Run executable
+      working-directory: video_conference_demo_nasm/build
+      run: |
+        chmod +x video_demo
+        ./video_demo || echo "Expected: no display/audio hardware"
