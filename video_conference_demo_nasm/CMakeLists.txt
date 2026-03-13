@@ -21,18 +21,18 @@ set(C_FILES
     network.c
 )
 
-add_executable(video_demo ${C_FILES} ${ASM_FILES})
+add_executable(video_conference_demo_nasm ${C_FILES} ${ASM_FILES})
 
-set_target_properties(video_demo PROPERTIES
+set_target_properties(video_conference_demo_nasm PROPERTIES
     LINKER_LANGUAGE C
     POSITION_INDEPENDENT_CODE ON
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(video_demo m)
+    target_link_libraries(video_conference_demo_nasm m)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    target_link_libraries(video_demo m)
-    set_property(TARGET video_demo APPEND_STRING PROPERTY LINK_FLAGS " -no_warn_unused_flag")
+    target_link_libraries(video_conference_demo_nasm m)
+    set_property(TARGET video_conference_demo_nasm APPEND_STRING PROPERTY LINK_FLAGS " -no_warn_unused_flag")
 endif()
